@@ -3,8 +3,9 @@ SELECT
   -- (SELECT rate FROM Googleシートを参照するテーブル LIMIT 1) AS rate, -- ドル円レート　※Googleシートが使えれば、=GOOGLEFINANCE("CURRENCY:USDJPY")を入れたGoogleシートを使ってテーブルを作成し、そのテーブルを参照する,
   150 AS rate,
   6.25 AS fee_tb, -- 1TBあたりの料金（USD）
-  PARSE_DATE("%Y%m%d", @DS_START_DATE) AS start_date,
-  PARSE_DATE("%Y%m%d", @DS_END_DATE) AS end_date, 
+  -- Looker StudioのBigQueryを参照する際、「期間パラメータを有効にする」オプションにチェックをいれると、Looker Studioのレポート上で指定した期間のデータを抽出可能になる。
+  PARSE_DATE("%Y%m%d", @DS_START_DATE) AS start_date,  --  期間の開始日
+  PARSE_DATE("%Y%m%d", @DS_END_DATE) AS end_date, --  期間の終了日
 --  PARSE_DATE("%Y%m%d", "20240901") AS start_date,
 --  PARSE_DATE("%Y%m%d", "20241202") AS end_date, 
 ),
@@ -25,13 +26,11 @@ query_jobs AS(
 query_cost AS(
   SELECT 
   project_id,	-- クエリが実行されたプロジェクトIDなので、<project_id>か<project2_id>
-  service,
-  sku_description,
   COALESCE(parent_job_id, job_id) AS parent_job_id, -- job_idの親がない場合はparent_job_idがNULLとなるため、job_idをparent_job_idとする
 --  parent_job_id, -- 1つのスケジュールされたクエリに対して1つ
   job_id, -- 1つのスケジュールされたクエリ内に複数のクエリがある場合は、1つ1つにJOBIDが割り当てられる
-  query,
-  user_email,
+  query, -- 実行されたクエリ（SQL文）
+  user_email, -- クエリ実行者、サービスアカウント
   (SELECT value FROM UNNEST(labels) WHERE key = "looker_studio_report_id") AS looker_studio_report_id, --  --  https://lookerstudio.google.com/reporting/xxxxxx
   (SELECT value FROM UNNEST(labels) WHERE key = "looker_studio_datasource_id") AS looker_studio_datasource_id,  --  https://lookerstudio.google.com/datasources/xxxxxx
   total_slot_ms,  -- 全期間におけるスロット（ミリ秒）
@@ -60,6 +59,6 @@ sq AS(
   WHERE l.key = 'data_source_id' AND l.value = 'scheduled_query'
 )
 SELECT q.*,
-IF(sq.parent_job_id IS NOT NULL, TRUE, FALSE) AS scheduled_query
+IF(sq.parent_job_id IS NOT NULL, TRUE, FALSE) AS scheduled_query -- スケジュールされたクエリか否か
 FROM query_cost q LEFT JOIN sq USING(parent_job_id)
 
