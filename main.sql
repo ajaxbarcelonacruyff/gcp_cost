@@ -14,7 +14,7 @@ SELECT
     service.description AS service-- BigQuery
     ,TRIM(REGEXP_EXTRACT(TRIM(COALESCE(REGEXP_EXTRACT(REPLACE(sku.description,'Long-Term','Long Term'),r'^(.*?)[(-]'), sku.description)) , r'^[A-Z][A-Za-z]*(?:\s[A-Z][A-Za-z]*)*')) AS sku_description
     ,sku.description AS original_sku_description -- Long Term Logical Storage
-    ,DATE(usage_start_time,'America/Los_Angeles') AS usage_date  -- ,usage_start_time, usage_end_time -- 1時間単位
+    ,DATE(usage_start_time,'Asia/Tokyo') AS usage_date  -- ,usage_start_time, usage_end_time -- 1時間単位
     ,project.id AS project_id
     ,project.name AS project_name
     ,CASE WHEN sku.description LIKE '%Replication%' THEN REGEXP_EXTRACT(resource.name, r'/datasets/([^\/]+)/') ELSE resource.name END AS resource_name
@@ -23,14 +23,14 @@ SELECT
     MIN(DATE(DATETIME(usage_start_time,'America/Los_Angeles'))) AS usage_start_date,    
     MAX(DATE(DATETIME(usage_start_time,'America/Los_Angeles'))) AS usage_end_date,    
 -- FROM `<project_id>.all_billing_data.gcp_billing_export_resource_v1_<billing_id>` 
-CROSS JOIN target
-WHERE 
+  CROSS JOIN target
+  WHERE 
 -- service.description LIKE 'BigQuery%'
 --	AND sku.description != 'Analysis'
-	DATE(DATETIME(usage_start_time,'Asia/Tokyo')) BETWEEN start_date AND end_date -- リージョンが東京の場合
+   DATE(DATETIME(usage_start_time,'Asia/Tokyo')) BETWEEN start_date AND end_date -- リージョンが東京の場合
 	-- AND DATE(DATETIME(usage_start_time,'America/Los_Angeles')) BETWEEN start_date AND end_date -- リージョンがUSの場合
-GROUP BY ALL
-HAVING cost_jpy >0
+  GROUP BY ALL
+  HAVING cost_jpy >0
 )
 SELECT 
   project_id,
