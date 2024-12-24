@@ -97,7 +97,8 @@ Below is an example query for processing Google Cloud Billing data in BigQuery, 
 
 ```sql
 WITH target AS(
-  SELECT 
+  SELECT
+    -- (SELECT rate FROM table referring to Google Sheet LIMIT 1) AS rate, -- Dollar/Yen rate * If Google Sheet is available, create a table using Google Sheet with =GOOGLEFINANCE(‘CURRENCY:USDJPY’). and reference that table,.
     150 AS rate, -- USD to JPY exchange rate (fixed value)
     6.25 AS fee_tb, -- Fee per TB (in USD)
     PARSE_DATE("%Y%m%d", @DS_START_DATE) AS start_date,
